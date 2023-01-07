@@ -1,0 +1,166 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ printf "%s" (include "common.names.fullname" .) }}
+  namespace: {{ include "common.names.namespace" . | quote }}
+  labels: {{- include "common.labels.standard" . | nindent 4 }}
+    app.kubernetes.io/component: solrnode
+    {{- if .Values.commonLabels }}
+    {{- include "common.tplvalues.render" ( dict "value" .Values.commonLabels "context" $ ) | nindent 4 }}
+    {{- end }}
+  {{- if .Values.commonAnnotations }}
+  annotations: {{- include "common.tplvalues.render" ( dict "value" .Values.commonAnnotations "context" $ ) | nindent 4 }}
+  {{- end }}
+spec:
+  serviceName: {{ printf "%s-headless" (include "common.names.fullname" .) }}
+  replicas: {{ .Values.replicaCount }}
+  {{- if .Values.updateStrategy }}
+  updateStrategy: {{- toYaml .Values.updateStrategy | nindent 4 }}
+  {{- end }}
+  selector:
+    matchLabels: {{- include "common.labels.matchLabels" . | nindent 6 }}
+      app.kubernetes.io/component: solrnode
+  template:
+    metadata:
+      labels: {{- include "common.labels.standard" . | nindent 8 }}
+        app.kubernetes.io/component: solrnode
+        {{- if .Values.podLabels }}
+          {{- include "common.tplvalues.render" (dict "value" .Values.podLabels "context" $) | nindent 8 }}
+        {{- end }}
+      {{- if .Values.podAnnotations }}
+      annotations:
+        {{- include "common.tplvalues.render" (dict "value" .Values.podAnnotations "context" $) | nindent 8 }}
+      {{- end }}
+    spec:
+      {{- if .Values.podSecurityContext.enabled }}
+      securityContext: {{- omit .Values.podSecurityContext "enabled" | toYaml | nindent 8 }}
+      {{- end }}
+      {{- include "solr.imagePullSecrets" . | nindent 6 }}
+      terminationGracePeriodSeconds: 10
+      containers:
+        - name: solr-node
+          image: {{ include "base.image" . }}
+          imagePullPolicy: {{ .Values.image.pullPolicy | quote }}
+          {{- if .Values.containerSecurityContext.enabled }}
+          securityContext: {{- omit .Values.containerSecurityContext "enabled" | toYaml | nindent 12 }}
+          {{- end }}
+          ports:
+          - containerPort: {{ .Values.service.ports.http }}
+            name: web
+          command:
+            - sh
+            - -c
+            - |
+              /opt/solr/ranger_audit_server/scripts/start_solr.sh -f
+              #sleep infinity
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+          #env:
+          #  - name: JAVA_HOME
+          #    value: /usr/local/openjdk-8
+          volumeMounts:
+          - name: admin-extra
+            mountPath: /opt/solr/ranger_audit_server/ranger_audits/conf/admin-extra.html
+            subPath: admin-extra.html
+          - name: admin-extra-menu-bottom
+            mountPath: /opt/solr/ranger_audit_server/ranger_audits/conf/admin-extra.menu-bottom.html
+            subPath: admin-extra.menu-bottom.html
+          - name: admin-extra-menu-top
+            mountPath: /opt/solr/ranger_audit_server/ranger_audits/conf/admin-extra.menu-top.html
+            subPath: admin-extra.menu-top.html
+          - name: elevate
+            mountPath: /opt/solr/ranger_audit_server/ranger_audits/conf/elevate.xml
+            subPath: elevate.xml
+          - name: managed-schema
+            mountPath: /opt/solr/ranger_audit_server/ranger_audits/conf/managed-schema
+            subPath: managed-schema  
+          - name: solrconfig
+            mountPath: /opt/solr/ranger_audit_server/ranger_audits/conf/solrconfig.xml
+            subPath: solrconfig.xml
+          - name: core
+            mountPath: /opt/solr/ranger_audit_server/ranger_audits/core.properties
+            subPath: core.properties
+          - name: log
+            mountPath: /opt/solr/ranger_audit_server/resources/log4j.properties
+            subPath: log4j.properties
+          - name: solr-in
+            mountPath: /opt/solr/ranger_audit_server/scripts/solr.in.sh
+            subPath: solr.in.sh
+          - name: solr-sh
+            mountPath: /opt/solr/ranger_audit_server/scripts/solr.sh
+            subPath: solr.sh
+          - name: start-solr
+            mountPath: /opt/solr/ranger_audit_server/scripts/start_solr.sh
+            subPath: start_solr.sh
+          - name: stop-solr
+            mountPath: /opt/solr/ranger_audit_server/scripts/stop_solr.sh
+            subPath: stop_solr.sh
+          - name: solr-xml
+            mountPath: /opt/solr/ranger_audit_server/solr.xml
+            subPath: solr.xml
+          - name: solr-log-dir
+            mountPath: /opt/solr/log
+          - name: solr-data-dir
+            mountPath: /opt/solr/data
+      volumes:
+        - name: admin-extra
+          configMap:
+            name: solr-cm
+        - name: admin-extra-menu-bottom
+          configMap:
+            name: solr-cm
+        - name: admin-extra-menu-top
+          configMap:
+            name: solr-cm
+        - name: elevate
+          configMap:
+            name: solr-cm
+        - name: managed-schema
+          configMap:
+            name: solr-cm
+        - name: solrconfig
+          configMap:
+            name: solr-cm
+        - name: core
+          configMap:
+            name: solr-cm-core
+        - name: log
+          configMap:
+            name: solr-cm-log
+        - name: solr-in
+          configMap:
+            name: solr-cm-scripts-solr-in
+            defaultMode: 0777
+        - name: solr-sh
+          configMap:
+            name: solr-cm-scripts-solr-sh
+            defaultMode: 0777
+        - name: start-solr
+          configMap:
+            name: solr-cm-scripts-start-solr
+            defaultMode: 0777
+        - name: stop-solr
+          configMap:
+            name: solr-cm-scripts-stop-solr
+            defaultMode: 0777
+        - name: solr-xml
+          configMap:
+            name: solr-cm-solr-xml
+            defaultMode: 0777
+  volumeClaimTemplates:
+  - metadata:
+      name: solr-log-dir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.storageClassName }}
+      resources:
+        requests:
+          storage: 1Gi
+  - metadata:
+      name: solr-data-dir
+    spec:
+      accessModes: [ "ReadWriteOnce" ]
+      storageClassName: {{ .Values.storageClassName }}
+      resources:
+        requests:
+          storage: 1Gi          

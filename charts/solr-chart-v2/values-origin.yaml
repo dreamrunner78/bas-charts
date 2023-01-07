@@ -1,0 +1,134 @@
+MAX_AUDIT_RETENTION_DAYS: 3
+RANGER_AUDITS_DATA_FOLDER: /opt/solr/data
+SOLR_LOG_FOLDER: /opt/solr/log
+SOLR_HEAP: 1024
+JAVA_HOME: /opt/java
+SOLR_MAX_MEM: 2
+SOLR_RANGER_HOME: /opt/solr/ranger_audit_server
+SOLR_PORT: 6083
+SOLR_INSTALL_DIR: /opt/solr/solr-bin
+SOLR_USER: solr
+
+nameOverride: ""
+fullnameOverride: ""
+namespaceOverride: ""
+
+replicaCount: 1
+
+commonLabels: {}
+  #name: value
+
+commonAnnotations: {}
+  #annot: bassim
+
+updateStrategy:
+  type: RollingUpdate
+
+podLabels: {}
+  #name: valuepodlabel
+
+podAnnotations: {}
+  #name: podAnnotations
+
+containerSecurityContext:
+  enabled: true
+  runAsUser: 1000
+  runAsNonRoot: true
+  readOnlyRootFilesystem: false
+
+
+service:
+  type: ClusterIP
+  ports:
+    http: 6083
+    https: 8443
+  nodePorts:
+    http: ""
+    https: ""
+  clusterIP: ""
+  annotations: {}
+
+security:
+  ssl:
+    enabled: false
+
+image:
+  registry: ""
+  repository: solr-j8
+  pullPolicy: Never #IfNotPresent
+  tag: "latest"
+  pullSecrets: []
+    #name: bassim
+
+serviceAccount:
+  # Specifies whether a service account should be created
+  create: false
+  # Annotations to add to the service account
+  annotations: {}
+  # The name of the service account to use.
+  # If not set and create is true, a name is generated using the fullname template
+  name: ""
+
+podSecurityContext: {}
+  # fsGroup: 2000
+
+securityContext: {}
+  # capabilities:
+  #   drop:
+  #   - ALL
+  # readOnlyRootFilesystem: true
+  # runAsNonRoot: true
+  # runAsUser: 1000
+
+ingress:
+  enabled: true
+  pathType: ImplementationSpecific
+  apiVersion: ""
+  hostname: dcp-solr.test
+  ingressClassName: ""
+  path: /
+  className: ""
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    # kubernetes.io/tls-acme: "true"
+  tls: false
+  selfSigned: false
+  extraHosts: []
+  extraPaths: []
+  extraTls: []
+  secrets: []
+  extraRules: []
+  # hosts:
+  #   - host: chart-example.local
+  #     paths:
+  #       - path: /
+  #         pathType: ImplementationSpecific
+  # tls: []
+  #  - secretName: chart-example-tls
+  #    hosts:
+  #      - chart-example.local
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+  # targetMemoryUtilizationPercentage: 80
+
+nodeSelector: {}
+
+tolerations: []
+
+affinity: {}

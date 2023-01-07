@@ -1,0 +1,14 @@
+apiVersion: v1
+entries:
+  solr-chart:
+  - apiVersion: v2
+    appVersion: 1.16.0
+    created: "2023-01-07T15:42:42.746475+01:00"
+    description: A Helm chart for Kubernetes
+    digest: 9e89828af5f870fbe042c66807125a0b16f5d8a8d126417c6d8edf0641a99284
+    name: solr-chart
+    type: application
+    urls:
+    - https://dreamrunner78.github.io/bas-charts/solr-chart-0.1.0.tgz
+    version: 0.1.0
+generated: "2023-01-07T15:42:42.741918+01:00"
